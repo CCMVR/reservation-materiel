@@ -248,8 +248,12 @@
             border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
             background: #f8fafc;
-            height: 50px;
+            min-height: 50px;
+            height: auto;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .cal-header {
@@ -272,7 +276,7 @@
             z-index: 10;
             background: white;
             text-align: left;
-            padding: 0 15px;
+            padding: 10px 15px;
             font-weight: 600;
             color: #334155;
             display: flex;
@@ -280,9 +284,11 @@
             justify-content: space-between;
             border-right: 2px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
-            height: 50px;
+            min-height: 50px;
+            height: auto;
             cursor: pointer;
             transition: 0.2s;
+            gap: 10px;
         }
 
         .equip-row-header:hover {
@@ -1101,8 +1107,8 @@
                     const user = document.getElementById('login-user').value;
                     const pass = document.getElementById('login-pass').value;
 
-                    // On garde l'illusion : si l'utilisateur tape "ADMIN", on envoie l'email à Supabase
-                    const email = (user === 'ADMIN') ? 'admin@ccmvr.fr' : user;
+                    // On garde l'illusion : si l'utilisateur tape "admin", on envoie l'email à Supabase
+                    const email = (user.toLowerCase() === 'admin') ? 'admin@ccmvr.fr' : user;
 
                     const btn = document.querySelector('#modal-login .btn-primary');
                     btn.disabled = true; btn.innerText = "Connexion...";
