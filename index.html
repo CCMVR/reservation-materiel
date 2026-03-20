@@ -862,10 +862,16 @@
                     // Lignes Matériel
                     state.data.eq.forEach(e => {
                         const rowHead = this.el('div', 'equip-row-header', `<span>${e.name}</span> <i class="fas fa-info-circle" style="color:#cbd5e1"></i>`);
-                        rowHead.onclick = () => {
+                        rowHead.onclick = (ev) => {
                             if (state.admin) {
-                                const newName = prompt("Nouveau nom pour : " + e.name, e.name);
-                                if (newName && newName !== e.name) this.updateEq(e.id, { name: newName });
+                                // Si on clique sur l'icône d'info, on ouvre la modale de détails (pour éditer la description par ex)
+                                if (ev.target.classList.contains('fa-info-circle')) {
+                                    this.showDet(e.id);
+                                } else {
+                                    // Sinon, comportement actuel : prompt pour le nom
+                                    const newName = prompt("Nouveau nom pour : " + e.name, e.name);
+                                    if (newName && newName !== e.name) this.updateEq(e.id, { name: newName });
+                                }
                             } else {
                                 this.showDet(e.id);
                             }
@@ -972,8 +978,33 @@
                 showDet(id) {
                     state.detId = id;
                     const e = state.data.eq.find(x => x.id == id);
-                    document.getElementById('det-title').innerText = e.name;
-                    document.getElementById('det-desc').innerText = e.description || 'Aucune description disponible.';
+                    const titleEl = document.getElementById('det-title');
+                    const descEl = document.getElementById('det-desc');
+
+                    titleEl.innerText = e.name;
+                    descEl.innerText = e.description || 'Aucune description disponible.';
+
+                    // Mode Admin : permettre l'édition par clic
+                    if (state.admin) {
+                        titleEl.style.cursor = 'pointer';
+                        titleEl.title = "Cliquer pour modifier le nom";
+                        titleEl.onclick = () => {
+                            const newName = prompt("Nouveau nom :", e.name);
+                            if (newName && newName !== e.name) this.updateEq(e.id, { name: newName });
+                        };
+
+                        descEl.style.cursor = 'pointer';
+                        descEl.title = "Cliquer pour modifier la description";
+                        descEl.onclick = () => {
+                            const newDesc = prompt("Nouvelle description :", e.description || "");
+                            if (newDesc !== null && newDesc !== e.description) this.updateEq(e.id, { description: newDesc });
+                        };
+                    } else {
+                        titleEl.style.cursor = 'default';
+                        titleEl.onclick = null;
+                        descEl.style.cursor = 'default';
+                        descEl.onclick = null;
+                    }
 
                     const notes = state.data.nt.filter(n => n.equipId == id);
                     document.getElementById('notes-list').innerHTML = notes.map(n => {
@@ -1169,14 +1200,17 @@
                 },
                 renderAdmin() {
                     document.getElementById('admin-list').innerHTML = state.data.eq.map((e, idx) => `
-                    <div class="admin-item">
-                        <div style="display:flex; flex-direction:column; gap:0;">
-                           <button onclick="app.moveEq(${e.id}, -1)" ${idx === 0 ? 'disabled' : ''} style="border:none; background:none; cursor:pointer; height:12px; color:#94a3b8; padding:0;" title="Monter"><i class="fas fa-caret-up"></i></button>
-                           <button onclick="app.moveEq(${e.id}, 1)" ${idx === state.data.eq.length - 1 ? 'disabled' : ''} style="border:none; background:none; cursor:pointer; height:12px; color:#94a3b8; padding:0;" title="Descendre"><i class="fas fa-caret-down"></i></button>
+                    <div class="admin-item" style="flex-direction: column; align-items: stretch; gap: 5px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="display:flex; flex-direction:column; gap:0;">
+                               <button onclick="app.moveEq(${e.id}, -1)" ${idx === 0 ? 'disabled' : ''} style="border:none; background:none; cursor:pointer; height:12px; color:#94a3b8; padding:0;" title="Monter"><i class="fas fa-caret-up"></i></button>
+                               <button onclick="app.moveEq(${e.id}, 1)" ${idx === state.data.eq.length - 1 ? 'disabled' : ''} style="border:none; background:none; cursor:pointer; height:12px; color:#94a3b8; padding:0;" title="Descendre"><i class="fas fa-caret-down"></i></button>
+                            </div>
+                            <input type="number" value="${e.order}" onchange="app.updateEq(${e.id}, {order: parseInt(this.value)})" style="width:45px; padding:3px; border:1px solid #e2e8f0; border-radius:4px; text-align:center; font-size:0.8rem;" title="Changer l'ordre manuellement">
+                            <input type="text" value="${e.name}" onblur="if(this.value !== '${e.name}') app.updateEq(${e.id}, {name: this.value})" style="flex:1; border:1px solid transparent; padding:4px 8px; border-radius:4px; font-weight:600; font-size:0.9rem; background:transparent;" onfocus="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'" onblur="this.style.borderColor='transparent'; this.style.background='transparent'">
+                            <button onclick="app.delEq(${e.id})" style="color:#fecaca; border:none; background:none; cursor:pointer; padding:5px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#fecaca'" title="Supprimer matériel"><i class="fas fa-trash"></i></button>
                         </div>
-                        <input type="number" value="${e.order}" onchange="app.updateEq(${e.id}, {order: parseInt(this.value)})" style="width:45px; padding:3px; border:1px solid #e2e8f0; border-radius:4px; text-align:center; font-size:0.8rem;" title="Changer l'ordre manuellement">
-                        <input type="text" value="${e.name}" onblur="if(this.value !== '${e.name}') app.updateEq(${e.id}, {name: this.value})" style="flex:1; border:1px solid transparent; padding:4px 8px; border-radius:4px; font-weight:600; font-size:0.9rem; background:transparent;" onfocus="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'" onblur="this.style.borderColor='transparent'; this.style.background='transparent'">
-                        <button onclick="app.delEq(${e.id})" style="color:#fecaca; border:none; background:none; cursor:pointer; padding:5px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#fecaca'" title="Supprimer matériel"><i class="fas fa-trash"></i></button>
+                        <input type="text" value="${e.description || ''}" placeholder="Description" onblur="if(this.value !== '${(e.description || '').replace(/'/g, "\\'")}') app.updateEq(${e.id}, {description: this.value})" style="border:1px solid transparent; padding:2px 8px; border-radius:4px; font-size:0.8rem; background:transparent; font-style: italic; color: #64748b;" onfocus="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'" onblur="this.style.borderColor='transparent'; this.style.background='transparent'">
                     </div>`).join('');
 
                     // Remplir le champ règlement avec la valeur actuelle
@@ -1185,7 +1219,12 @@
 
                 async updateEq(id, updates) {
                     await API.req(`equipment?id=eq.${id}`, 'PATCH', updates);
-                    this.refresh();
+                    await this.refresh();
+
+                    // Si la modale de détails est ouverte pour cet objet, on la rafraîchit pour voir les modifs
+                    if (state.detId === id && document.getElementById('modal-det').style.display === 'flex') {
+                        this.showDet(id);
+                    }
                 },
 
                 async moveEq(id, direction) {
@@ -1200,10 +1239,10 @@
                     // Swap orders
                     const oldOrder = current.order;
                     // On utilise une valeur temporaire pour éviter les conflits si contrainte unique (même si Supabase n'en a pas forcément par défaut ici)
-                    await API.req(`equipment?id=eq.${current.id}`, 'PATCH', { order: -999 }); 
+                    await API.req(`equipment?id=eq.${current.id}`, 'PATCH', { order: -999 });
                     await API.req(`equipment?id=eq.${other.id}`, 'PATCH', { order: oldOrder });
                     await API.req(`equipment?id=eq.${current.id}`, 'PATCH', { order: other.order });
-                    
+
                     this.refresh();
                 },
 
